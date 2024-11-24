@@ -22,8 +22,9 @@ its argument, or 0 if the argument is 0. For example:
     `pred 7 = 6`
     `pred 0 = 0` -/
 
-def pred : ℕ → ℕ :=
-  sorry
+def pred : ℕ → ℕ
+  | 0     => 0
+  | n + 1 => n
 
 /- 1.2. Check that your function works as expected. -/
 
@@ -61,6 +62,10 @@ def someEnv : String → ℤ
   | _   => 201
 
 #eval eval someEnv (AExp.var "x")   -- expected: 3
+#eval eval someEnv (AExp.div (AExp.num 4) (AExp.num 0)) -- expected: 0
+#eval eval someEnv (AExp.mul (AExp.num 4) (AExp.var "z")) -- expected: 804
+#eval eval someEnv (AExp.add (AExp.var "x") (AExp.num 2)) -- expected: 5
+#eval eval someEnv (AExp.sub (AExp.var "x") (AExp.num 4)) -- expected: -1
 -- invoke `#eval` here
 
 /- 2.2. The following function simplifies arithmetic expressions involving
@@ -69,16 +74,20 @@ that it also simplifies expressions involving the other three binary
 operators. -/
 
 def simplify : AExp → AExp
-  | AExp.add (AExp.num 0) e₂ => simplify e₂
-  | AExp.add e₁ (AExp.num 0) => simplify e₁
-  -- insert the missing cases here
-  -- catch-all cases below
-  | AExp.num i               => AExp.num i
-  | AExp.var x               => AExp.var x
-  | AExp.add e₁ e₂           => AExp.add (simplify e₁) (simplify e₂)
-  | AExp.sub e₁ e₂           => AExp.sub (simplify e₁) (simplify e₂)
-  | AExp.mul e₁ e₂           => AExp.mul (simplify e₁) (simplify e₂)
-  | AExp.div e₁ e₂           => AExp.div (simplify e₁) (simplify e₂)
+  | AExp.add (AExp.num 0) e₂            => simplify e₂
+  | AExp.add e₁           (AExp.num 0)  => simplify e₁
+  | AExp.mul e₁           (AExp.num 1)  => simplify e₁
+  | AExp.mul (AExp.num 1) e₂            => simplify e₂
+  | AExp.div (AExp.num 0) _e₂           => AExp.num 0
+  | AExp.div e₁           (AExp.num 1)  => simplify e₁
+  | AExp.div e₁           (AExp.num 0)  => simplify e₁
+
+  | AExp.num i                          => AExp.num i
+  | AExp.var x                          => AExp.var x
+  | AExp.add e₁ e₂                      => AExp.add (simplify e₁) (simplify e₂)
+  | AExp.sub e₁ e₂                      => AExp.sub (simplify e₁) (simplify e₂)
+  | AExp.mul e₁ e₂                      => AExp.mul (simplify e₁) (simplify e₂)
+  | AExp.div e₁ e₂                      => AExp.div (simplify e₁) (simplify e₂)
 
 /- 2.3. Is the `simplify` function correct? In fact, what would it mean for it
 to be correct or not? Intuitively, for `simplify` to be correct, it must
@@ -90,8 +99,8 @@ the property that the value of `e` after simplification is the same as the
 value of `e` before. -/
 
 theorem simplify_correct (env : String → ℤ) (e : AExp) :
-  True :=   -- replace `True` by your theorem statement
-  sorry   -- leave `sorry` alone
+  eval env e = eval env (simplify e) :=
+    sorry   -- leave `sorry` alone
 
 
 /- ## Question 3 (**optional**): Map
@@ -99,8 +108,9 @@ theorem simplify_correct (env : String → ℤ) (e : AExp) :
 3.1 (**optional**). Define a generic `map` function that applies a function to
 every element in a list. -/
 
-def map {α : Type} {β : Type} (f : α → β) : List α → List β :=
-  sorry
+def map {α : Type} {β : Type} (f : α → β) : List α → List β
+  | []      => []
+  | x :: xs => (f x) :: map f xs
 
 #eval map (fun n ↦ n + 10) [1, 2, 3]   -- expected: [11, 12, 13]
 
@@ -112,7 +122,14 @@ properties of `map` as theorems. Schematically:
 
 Try to give meaningful names to your theorems. Also, make sure to state the
 second property as generally as possible, for arbitrary types. -/
+theorem map_identity {α : Type} (xs : List α) :
+  xs = map (fun x ↦ x) xs :=
+    sorry
 
--- enter your theorem statements here
+theorem map_composition
+  {α : Type} {β : Type} {γ : Type}
+    (f : (α → β)) (g : (β → γ)) (xs : List α) :
+      map (fun x ↦ g (f x)) xs = map g (map f xs) :=
+        sorry
 
 end LoVe
