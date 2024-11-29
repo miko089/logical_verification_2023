@@ -26,35 +26,55 @@ Section 3.3 in the Hitchhiker's Guide. -/
 
 theorem I (a : Prop) :
   a → a :=
-  sorry
+  by
+    intro ha
+    apply ha
+
 
 theorem K (a b : Prop) :
   a → b → b :=
-  sorry
+  by
+    intro _ha hb
+    apply hb
 
 theorem C (a b c : Prop) :
   (a → b → c) → b → a → c :=
-  sorry
+  by
+    intro hf hb ha
+    apply hf ha hb
 
 theorem proj_fst (a : Prop) :
   a → a → a :=
-  sorry
+  by
+    intro ha _ha'
+    apply ha
 
 /- Please give a different answer than for `proj_fst`: -/
 
 theorem proj_snd (a : Prop) :
   a → a → a :=
-  sorry
+  by
+    intro _ha ha'
+    apply ha'
 
 theorem some_nonsense (a b c : Prop) :
   (a → b → c) → a → (a → c) → b → c :=
-  sorry
+  by
+    intro _hf ha hac _hb
+    exact hac ha
 
 /- 1.2. Prove the contraposition rule using basic tactics. -/
 
 theorem contrapositive (a b : Prop) :
   (a → b) → ¬ b → ¬ a :=
-  sorry
+  by
+    intro hab
+    apply C
+    intro ha
+    rw [← Not]
+    apply Not_Not_intro
+    exact hab ha
+
 
 /- 1.3. Prove the distributivity of `∀` over `∧` using basic tactics.
 
@@ -64,7 +84,29 @@ be necessary. -/
 
 theorem forall_and {α : Type} (p q : α → Prop) :
   (∀x, p x ∧ q x) ↔ (∀x, p x) ∧ (∀x, q x) :=
-  sorry
+  by
+    apply Iff.intro
+    { intro hpq
+      apply And.intro
+      { intro x
+        apply And.left
+        exact hpq x
+      }
+      {
+        intro x
+        apply And.right
+        exact hpq x
+      }
+    }
+    {
+      intro hpq
+      intro x
+      apply And.intro
+      { apply And.left hpq }
+      { apply And.right hpq }
+    }
+
+
 
 
 /- ## Question 2: Natural Numbers
@@ -76,23 +118,66 @@ theorem forall_and {α : Type} (p q : α → Prop) :
 
 theorem mul_zero (n : ℕ) :
   mul 0 n = 0 :=
-  sorry
+  by
+    induction n with
+    | zero => rfl
+    | succ n' ih => simp [mul, ih]
+
 
 #check add_succ
 theorem mul_succ (m n : ℕ) :
   mul (Nat.succ m) n = add (mul m n) n :=
-  sorry
+  by
+    induction n with
+    | zero => rfl
+    | succ n' ih =>
+      {
+        simp [mul, ih]
+        simp [add_comm, add_succ]
+        rw [add]
+        rw [add]
+        rw [add_assoc]
+        simp [add_assoc, add_comm]
+      }
+
+
 
 /- 2.2. Prove commutativity and associativity of multiplication using the
 `induction` tactic. Choose the induction variable carefully. -/
 
 theorem mul_comm (m n : ℕ) :
   mul m n = mul n m :=
-  sorry
+  by
+    induction n with
+    | zero =>
+      {
+        rw [mul]
+        rw [mul_zero]
+      }
+    | succ n' ih =>
+      {
+        rw [mul_succ]
+        rw [mul]
+        rw [add_comm]
+        rw [ih]
+      }
 
 theorem mul_assoc (l m n : ℕ) :
   mul (mul l m) n = mul l (mul m n) :=
-  sorry
+  by
+    induction n with
+    | zero => simp [mul]
+    | succ n' ih =>
+      {
+        rw [mul_comm]
+        rw [mul_succ]
+        rw [mul_comm]
+        rw [ih]
+        apply Eq.symm
+        rw [mul]
+        rw [mul_add]
+        rw [add_comm]
+      }
 
 /- 2.3. Prove the symmetric variant of `mul_add` using `rw`. To apply
 commutativity at a specific position, instantiate the rule by passing some
@@ -100,7 +185,27 @@ arguments (e.g., `mul_comm _ l`). -/
 
 theorem add_mul (l m n : ℕ) :
   mul (add l m) n = add (mul n l) (mul n m) :=
-  sorry
+  by
+    induction n with
+    | zero =>
+      {
+        rw [mul]
+        rw [mul_comm]
+        rw [mul]
+        rw [mul_comm]
+        rw [mul]
+        rw [add]
+      }
+    | succ n' ih =>
+      {
+        rw [mul_comm]
+        rw [mul_succ]
+        rw [mul_comm]
+        rw [ih]
+        rw [mul_succ]
+        rw [mul_succ]
+        ac_rfl
+      }
 
 
 /- ## Question 3 (**optional**): Intuitionistic Logic
@@ -129,13 +234,43 @@ and similarly for `Peirce`. -/
 
 theorem Peirce_of_EM :
   ExcludedMiddle → Peirce :=
-  sorry
+  by
+    rw [ExcludedMiddle]
+    rw [Peirce]
+    intro em a b
+    intro f
+    apply Or.elim
+    { apply em }
+    {
+      intro a'
+      apply a'
+    }
+    {
+      rw [Not]
+      intro af
+      apply f
+      intro a''
+      apply False.elim
+      apply af
+      apply a''
+    }
+
+
 
 /- 3.2 (**optional**). Prove the following implication using tactics. -/
 
 theorem DN_of_Peirce :
   Peirce → DoubleNegation :=
-  sorry
+  by
+    rw [Peirce, DoubleNegation]
+    intro pr a
+    rw [Not, Not]
+    intro hnnb
+    apply pr a False
+    intro haf
+    apply False.elim
+    apply hnnb
+    apply haf
 
 /- We leave the remaining implication for the homework: -/
 
@@ -143,7 +278,9 @@ namespace SorryTheorems
 
 theorem EM_of_DN :
   DoubleNegation → ExcludedMiddle :=
-sorry
+  by
+    sorry
+
 
 end SorryTheorems
 
