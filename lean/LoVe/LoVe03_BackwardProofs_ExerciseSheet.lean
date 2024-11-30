@@ -263,23 +263,114 @@ theorem DN_of_Peirce :
   Peirce → DoubleNegation :=
   by
     rw [Peirce, DoubleNegation]
-    intro pr a
-    rw [Not, Not]
-    intro hnnb
+    intro pr a nna
     apply pr a False
-    intro haf
-    apply False.elim
-    apply hnnb
-    apply haf
+    intro na
+    exact False.elim (nna na)
+
 
 /- We leave the remaining implication for the homework: -/
 
 namespace SorryTheorems
 
+theorem demorgan (a b : Prop) :
+  (¬ a ∨ ¬ b) → ¬(a ∧ b) :=
+  by
+    intro nor
+    intro and
+    apply Or.elim
+    apply nor
+    {
+      intro na
+      apply na
+      apply And.left
+      apply and
+    }
+    {
+      intro nb
+      apply nb
+      apply And.right
+      apply and
+    }
+
+theorem idiot_demorgan (a b : Prop) :
+  (a ∧ b) → ¬(¬a ∨ ¬b) :=
+  by
+    intro anb
+    rw [Not]
+    intro arb
+    apply Or.elim
+    apply arb
+    {
+      rw [Not]
+      intro na
+      apply na
+      apply And.left
+      assumption
+    }
+    {
+      rw [Not]
+      intro nb
+      apply nb
+      apply And.right
+      assumption
+    }
+
+theorem idiot_demorgan2 (a b : Prop) :
+  a ∨ b → ¬(¬a ∧ ¬b) :=
+  by
+    intro ab anb
+    apply Or.elim ab
+    { exact anb.left }
+    { exact anb.right }
+
+theorem silly (a b : Prop) :
+  ¬(¬a ∧ ¬b) → ¬¬(a ∨ b) :=
+  by
+    apply contrapositive
+    intro nab
+    apply And.intro
+    {
+      intro a'
+      apply nab (Or.inl a')
+    }
+    {
+      intro b'
+      apply nab (Or.inr b')
+    }
+
+
+theorem lemma1 (a : Prop) :
+  DoubleNegation -> (¬¬a ∨ ¬a) → a ∨ ¬ a :=
+    by
+      intro dn aorna
+      apply Or.elim
+      apply aorna
+      {
+        intro a'
+        apply Or.inl
+        apply dn
+        assumption
+      }
+      {
+        intro a'
+        apply Or.inr
+        assumption
+      }
+
+
 theorem EM_of_DN :
   DoubleNegation → ExcludedMiddle :=
-  by
-    sorry
+    by
+      rw [DoubleNegation, ExcludedMiddle]
+      intro dn a
+      apply lemma1
+      exact dn
+      apply dn
+      apply silly
+      intro nna
+      exact (nna.left (nna.right))
+
 
 
 end SorryTheorems
